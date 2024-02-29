@@ -455,7 +455,7 @@ chat_input_field: Input key that you want the chat to send the user message with
   chat_input_field="${chat_input_field}"
   `
       : ""
-  }host_url="http://localhost:7860"${
+  }host_url="http://localhost:6006"${
     !isAuth
       ? `
   api_key="..."`

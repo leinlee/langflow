@@ -3,14 +3,14 @@
   "configurations": [
     {
       "name": "Debug Backend",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
       "args": [
         "--factory",
         "langflow.main:create_app",
         "--port",
-        "7860",
+        "6006",
         "--reload",
         "--log-level",
         "debug"
@@ -21,7 +21,7 @@
     },
     {
       "name": "Python: Remote Attach",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
       "justMyCode": true,
       "connect": {
@@ -43,7 +43,7 @@
     },
     {
       "name": "Python: Debug Tests",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "${file}",
       "purpose": ["debug-test"],

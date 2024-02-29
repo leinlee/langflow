@@ -1,6 +1,6 @@
 from langflow import CustomComponent
 from langchain_community.tools.json.tool import JsonSpec
-from langchain_community.agent_toolkits.json.toolkit import JsonToolkit
+from langchain_community.agent_toolkits import JsonToolkit
 
 
 class JsonToolkitComponent(CustomComponent):

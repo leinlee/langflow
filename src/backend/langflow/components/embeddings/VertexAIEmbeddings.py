@@ -1,5 +1,5 @@
 from langflow import CustomComponent
-from langchain.embeddings import VertexAIEmbeddings
+from langchain_community.embeddings import VertexAIEmbeddings
 from typing import Optional, List
 
 

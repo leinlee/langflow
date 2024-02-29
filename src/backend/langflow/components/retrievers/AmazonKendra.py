@@ -1,6 +1,6 @@
 from typing import Optional
 from langflow import CustomComponent
-from langchain.retrievers import AmazonKendraRetriever
+from langchain_community.retrievers import AmazonKendraRetriever
 from langchain.schema import BaseRetriever
 
 

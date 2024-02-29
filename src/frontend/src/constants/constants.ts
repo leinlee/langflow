@@ -528,7 +528,7 @@ export const URL_EXCLUDED_FROM_ERROR_RETRIES = [
   `${BASE_URL_API}validate/code`,
   `${BASE_URL_API}custom_component`,
   `${BASE_URL_API}validate/prompt`,
-  `http://localhost:7860/login`,
+  `http://localhost:6006/login`,
   `${BASE_URL_API}api_key/store`,
 ];
 
