@@ -2,6 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug Backend no uvicorn",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/backend/langflow/x_debug.py",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
       "name": "Debug Backend",
       "type": "debugpy",
       "request": "launch",
@@ -16,7 +26,7 @@
         "debug"
       ],
       "jinja": true,
-      "justMyCode": true,
+      "justMyCode": false,
       "envFile": "${workspaceFolder}/.env"
     },
     {
@@ -46,7 +56,9 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "purpose": ["debug-test"],
+      "purpose": [
+        "debug-test"
+      ],
       "console": "integratedTerminal",
       "justMyCode": false
     }

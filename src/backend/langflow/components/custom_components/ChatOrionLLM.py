@@ -3,7 +3,7 @@ from langchain.schema import Document
 
 
 class ChatOrionLLM(CustomComponent):
-    display_name = "XXXX"
+    display_name = "AAAAA"
     description = "component for chat orion LLM"
 
     def build_config(self) -> dict:
