@@ -3,7 +3,7 @@ import sys
 sys.path.append("src/backend")
 
 import uvicorn
-from langflow.main import create_app, configure
+from langflow.main import create_app
 # from langflow.__main__ import get_number_of_workers
 
 app = create_app()
