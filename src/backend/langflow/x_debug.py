@@ -9,6 +9,7 @@ from langflow.main import create_app
 app = create_app()
 uvicorn.run(
     "langflow.main:create_app",
+    # app,
     host="127.0.0.1",
     port=6006,
     log_level="debug",

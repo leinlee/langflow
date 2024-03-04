@@ -1,5 +1,5 @@
 from langflow import CustomComponent
-from backend.langflow.vitally.langchain.ChatOrionModel import ChatOrionModel
+from langflow.vitally.langchain.ChatOrionModel import ChatOrionModel
 
 
 class ChatOrionLLM(CustomComponent):
