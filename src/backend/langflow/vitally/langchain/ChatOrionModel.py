@@ -1,13 +1,11 @@
 import json
 import logging
 import re
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Type
+from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
-    generate_from_stream,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -21,8 +19,11 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_pydantic_field_names
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.runnables import run_in_executor
 
 logger = logging.getLogger(__name__)
 
@@ -69,12 +70,12 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)
 
 
-class ChatOrion(BaseChatModel):
+class ChatOrionModel(BaseChatModel):
     """Chat with orion"""
 
-    request_timeout: int = 60
+    request_timeout: int = 120
     """request timeout for chat http requests"""
-    service_url: str = None
+    base_url: str = None
     """URL of WasmChat service"""
     model: str = "NA"
     """model name, default is `NA`."""
@@ -86,31 +87,31 @@ class ChatOrion(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    @root_validator(pre=True)
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Build extra kwargs from additional params that were passed in."""
-        all_required_field_names = get_pydantic_field_names(cls)
-        extra = values.get("model_kwargs", {})
-        for field_name in list(values):
-            if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
-            if field_name not in all_required_field_names:
-                logger.warning(
-                    f"""WARNING! {field_name} is not default parameter.
-                    {field_name} was transferred to model_kwargs.
-                    Please confirm that {field_name} is what you intended."""
-                )
-                extra[field_name] = values.pop(field_name)
+    # @root_validator(pre=True)
+    # def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    #     """Build extra kwargs from additional params that were passed in."""
+    #     all_required_field_names = get_pydantic_field_names(cls)
+    #     extra = values.get("model_kwargs", {})
+    #     for field_name in list(values):
+    #         if field_name in extra:
+    #             raise ValueError(f"Found {field_name} supplied twice.")
+    #         if field_name not in all_required_field_names:
+    #             logger.warning(
+    #                 f"""WARNING! {field_name} is not default parameter.
+    #                 {field_name} was transferred to model_kwargs.
+    #                 Please confirm that {field_name} is what you intended."""
+    #             )
+    #             extra[field_name] = values.pop(field_name)
 
-        invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
-        if invalid_model_kwargs:
-            raise ValueError(
-                f"Parameters {invalid_model_kwargs} should be specified explicitly. "
-                f"Instead they were passed in as part of `model_kwargs` parameter."
-            )
+    #     invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
+    #     if invalid_model_kwargs:
+    #         raise ValueError(
+    #             f"Parameters {invalid_model_kwargs} should be specified explicitly. "
+    #             f"Instead they were passed in as part of `model_kwargs` parameter."
+    #         )
 
-        values["model_kwargs"] = extra
-        return values
+    #     values["model_kwargs"] = extra
+    #     return values
 
     def _generate(
         self,
@@ -119,9 +120,9 @@ class ChatOrion(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(messages=messages, stop=stop, run_manager=run_manager, **kwargs)
-            return generate_from_stream(stream_iter)
+        # if self.streaming:
+        #     stream_iter = self._stream(messages=messages, stop=stop, run_manager=run_manager, **kwargs)
+        #     return generate_from_stream(stream_iter)
 
         res = self._chat(messages, **kwargs)
 
@@ -129,7 +130,6 @@ class ChatOrion(BaseChatModel):
             raise ValueError(f"Error code: {res.status_code}, reason: {res.reason}")
 
         response = res.json()
-
         return self._create_chat_result(response)
 
     def _stream(
@@ -174,14 +174,41 @@ class ChatOrion(BaseChatModel):
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text, chunk=chunk)
 
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """An async variant of astream.
+
+        If not provided, the default behavior is to delegate to the _generate method.
+
+        The implementation below instead will delegate to `_stream` and will
+        kick it off in a separate thread.
+
+        If you're able to natively support async, then by all means do so!
+        """
+        result = await run_in_executor(
+            None,
+            self._stream,
+            messages,
+            stop=stop,
+            run_manager=run_manager.get_sync() if run_manager else None,
+            **kwargs,
+        )
+        for chunk in result:
+            yield chunk
+
     def _chat(self, messages: List[BaseMessage], **kwargs: Any) -> requests.Response:
-        if self.service_url is None:
+        if self.base_url is None:
             res = requests.models.Response()
             res.status_code = 503
             res.reason = "The IP address or port of the chat service is incorrect."
             return res
 
-        service_url = f"{self.service_url}/v1/chat/completions"
+        cmd_url = f"{self.base_url}chat/completions"
 
         if self.streaming:
             payload = {
@@ -196,7 +223,7 @@ class ChatOrion(BaseChatModel):
             }
 
         res = requests.post(
-            url=service_url,
+            url=cmd_url,
             timeout=self.request_timeout,
             headers={
                 "accept": "application/json",

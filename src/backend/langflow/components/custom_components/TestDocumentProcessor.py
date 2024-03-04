@@ -3,7 +3,7 @@ from langchain.schema import Document
 
 
 class DocumentProcessor(CustomComponent):
-    display_name = "My Processor 4"
+    display_name = "TestCustomComponent"
     description = "component for chat orion LLM"
 
     def build_config(self) -> dict:
